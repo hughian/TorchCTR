@@ -1,30 +1,30 @@
 ##
-torch-CTR
+Torch-CTR
 
 ## feature info
-**SparseFeature** 稀疏特征，通常是无序的类别特征，然后进行 One-Hot Encoding，存储成稀疏形式，就一个数值。然后在 Embedding 的时候使用 embedding_lookup。
+**SparseFeature** 稀疏特征，通常是无序的类别特征，然后进行 One-Hot Encoding，存储成稀疏形式。使用 Embedding 嵌入到低纬稠密向量。
 
 ```
 SparseFeature(name, dim, embedding_dim, hashing, dtype='int32') 
 ```
 
-**DenseFeature** 稠密特征，连续值，或者有序的特征值？
+**DenseFeature** 稠密特征，连续值，或者有序的特征值
 
 ```
 DenseFeature(name, dim, embedding_dim, dtype='float32')
 ```
 
-**ListSparseFeature** 变长的稀疏特征，比如用户的历史行为向量，只对海量的物品中的一部分有过行为，因此是稀疏的，但每个用户有过交互行为的物品数目不定，因此是变长的。特征描述里面需要一个 `max_len` 来描述这个特征可能出现的最长的长度。这个特征的嵌入是这个 list 中每一个元素 embedding_lookup 之后的 sum. 
+**VarlenSparseFeature** 变长的稀疏特征，比如用户的历史行为向量。`max_len` 来描述这个特征可能出现的最长的长度。这个特征的嵌入是这个 list 中每一个元素 embedding_lookup 之后的聚合(sum, mean, max). 
 
 ```
-ListSparseFeature(name, max_len, dim, embedding_dim, hashing, dtype='int32')
+VarlenSparseFeature(name, max_len, dim, embedding_dim, hashing, dtype='int32')
 ```
 
 **关于 feture_metas** 需要提供:
 - add sparse feature
 - add dense feature
 - add varlen feature
-- __len__
+- \_\_len\_\_
 - iterable(name, feat)
 
 
@@ -54,21 +54,22 @@ nn.ModuleDict({
 build model 的时候输入 Feature 信息，然后按照名字和类型 build Embedding.
 
 * 对于 Sparse Feature, 直接使用 Embedding
-* 对于 List Sparse Feature，使用 EmbeddingBag, mode='sum', 对多个 Embedding 求和
-* 对于 Dense Feature, 使用 Dense 变到同一维度, 或者直接放入下一层
+* 对于 List Sparse Feature，使用 EmbeddingBag, mode='sum'/'mean', 也可以只使用 Embedding, 然后使用另外的方式来做 Pooling
+* 对于 Dense Feature, 使用 Dense 变到同一维度, 或者直接 concat 到下一层
 
 
 ## MLP
-这就是个简单的 DNN, 可能就需要加一下 BN, Dropout 之类的，然后改用不同激活函数，以及层数。
+这就是个简单的 DNN, 不同之处是使用 BN, Dropout 之类的，然后就是改用不同激活函数，以及层数。
 
 
 ## Sigmoid(Prediction)
-对于二分类任务的话，当然是使用 Sigmoid, 对于多分类任务，要使用 softmax?
+对于二分类任务的话，当然是使用 Sigmoid, 对于多分类任务，要使用 softmax。
 
-回归任务应该使用 MSE.
+回归任务： MSE/MAE 这些评价指标.
 
 
 # TODO
-- [ ] Embedding_dim
+- [ ] embedding_dimme
+- [ ] group_embedding
 - [ ] L1, L2 Regularization 
 - [ ] more models
